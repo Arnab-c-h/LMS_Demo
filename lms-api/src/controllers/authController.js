@@ -139,3 +139,8 @@ exports.restrictTo = (...roles) => {
 		next();
 	};
 };
+
+
+exports.isLoggedIn = catchAsync(async(req,res,next)=>{
+    
+})
