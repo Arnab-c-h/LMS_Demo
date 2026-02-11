@@ -9,6 +9,10 @@ const cors = require('cors');
 //import routes
 const userRouter = require('../src/routes/userRoutes.js');
 const courseRouter = require('../src/routes/courseRoutes.js');
+const enrollmentRouter = require('../src/routes/enrollmentRoutes.js');
+const bookingRouter = require('../src/routes/bookingRoutes.js');
+
+const bookingController = require('../src/controllers/bookingController.js');
 
 //import uitl
 const AppError = require('../src/utils/appError.js');
@@ -17,6 +21,13 @@ const globalErrorHandler = require('../src/controllers/errorController.js');
 const app = express();
 
 //1-GLOBAL MIDDLEWARES
+//stripe webhook
+app.post(
+	'/webhook-checkout',
+	express.raw({ type: '*/*' }),
+	bookingController.webhookCheckout,
+);
+
 app.use(helmet());
 
 if (process.env.NODE_ENV === 'development') {
@@ -47,6 +58,8 @@ app.get('/', (req, res) => {
 //User Routes
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/courses', courseRouter);
+app.use('/api/v1/enrollments', enrollmentRouter);
+app.use('/api/v1/bookings', bookingRouter);
 
 //3-UNHANDLED ROUTE HANDLER
 //if here, no routes match

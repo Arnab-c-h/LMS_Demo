@@ -1,6 +1,7 @@
 const express = require('express');
 const moduleController = require('../controllers/moduleController.js');
 const authController = require('../controllers/authController.js');
+const quizRouter = require('../routes/quizRoutes.js')
 
 //allows us to access :courseId from Course Router
 const router = express.Router({ mergeParams: true });
@@ -29,4 +30,7 @@ router
 		moduleController.deleteModule,
 	);
 
+
+//quiz routes
+router.use('/:moduleId/quizzes',quizRouter)
 module.exports = router;

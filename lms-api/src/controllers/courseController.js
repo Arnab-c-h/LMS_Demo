@@ -33,9 +33,9 @@ exports.getAllCourses = catchAsync(async (req, res, next) => {
 		where: { published: true },
 		include: {
 			instructor: { select: { name: true, email: true } },
-		},
-		_count: {
-			select: { modules: true, enrollments: true },
+			_count: {
+				select: { modules: true, enrollments: true },
+			},
 		},
 	});
 

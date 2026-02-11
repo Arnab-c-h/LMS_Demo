@@ -2,7 +2,8 @@ const express = require('express');
 const courseController = require('../controllers/courseController.js');
 const moduleRouter = require('./moduleRoutes.js');
 const authController = require('../controllers/authController.js');
-const enrollmentController = require('../controllers/enrollmentController.js')
+const enrollmentRouter = require('../routes/enrollmentRoutes.js');
+const quizRouter = require('../routes/quizRoutes.js');
 
 const router = express.Router();
 
@@ -17,6 +18,9 @@ router.get('/:id', courseController.getCourse);
 
 //PROTECTED ROUTES
 router.use(authController.protect);
+
+//ENROLLMET ROUTES
+router.use('/:courseId/enroll', enrollmentRouter);
 
 //MODULE ROUTRES
 router.use('/:courseId/modules', moduleRouter);
@@ -39,4 +43,6 @@ router
 		courseController.deleteCourse,
 	);
 
+//quiz routes
+router.use('/:courseId/quizzes',quizRouter)
 module.exports = router;

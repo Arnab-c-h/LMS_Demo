@@ -75,7 +75,9 @@ model Course {
   instructorId  String
   instructor    User      @relation("InstructorCourses", fields: [instructorId], references: [id])
   
+  
   modules       Module[]
+  quizzes          Quiz[]
   enrollments   Enrollment[]
 
   createdAt     DateTime  @default(now())
@@ -91,6 +93,7 @@ model Module {
   courseId  String
   course    Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   lessons   Lesson[]
+  quizzes      Quiz[]
 
   @@map("modules")
 }
@@ -109,7 +112,7 @@ model Lesson {
   moduleId    String
   module      Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   
-  quiz        Quiz?
+  quizzes        Quiz[]
   progress    LessonProgress[]
 
   @@map("lessons")
@@ -120,8 +123,16 @@ model Quiz {
   title       String
   passMark    Int       @default(70)
   
-  lessonId    String    @unique
-  lesson      Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  //For quiz after less,mod,course
+  lessonId    String?    
+  lesson      Lesson?    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  
+  moduleId    String?    
+  module      Module?    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  courseId    String?    
+  course      Course?    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
   
   questions   Question[]
   attempts    QuizAttempt[]

@@ -40,14 +40,14 @@ exports.enrollStud = catchAsync(async (req, res, next) => {
 		);
 	}
 
-	const enrollemt = await prisma.enrollemt.create({
+	const enrollment = await prisma.enrollment.create({
 		data: { userId, courseId },
 	});
 
 	res.status(201).json({
 		status: 'success',
 		message: 'Enrollment successfull',
-		data: { enrollemt },
+		data: { enrollment },
 	});
 });
 
@@ -87,7 +87,7 @@ exports.getMyCourses = catchAsync(async (req, res, next) => {
 					title: true,
 					thumbnail: true,
 					description: true,
-					instructor: { select: true },
+					instructor: { select: { name: true, photo: true } },
 					_count: { select: { modules: true } },
 				},
 			},
@@ -104,6 +104,12 @@ exports.getMyCourses = catchAsync(async (req, res, next) => {
 });
 
 exports.getCourseStudents = catchAsync(async (req, res, next) => {
+	if (!req.params.courseId) {
+		return next(
+			new AppError('This route must be accessed via course URL', 400),
+		);
+	}
+
 	const enrollments = await prisma.enrollment.findMany({
 		where: { courseId: req.params.courseId },
 		include: {
@@ -121,7 +127,7 @@ exports.getCourseStudents = catchAsync(async (req, res, next) => {
 	});
 
 	const students = enrollments.map((e) => {
-		e.user;
+		return e.user;
 	});
 
 	res.status(200).json({

@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+const { PrismaClient, LessonType } = require('@prisma/client');
 const AppError = require('../utils/appError.js');
 const catchAsync = require('../utils/catchAsync.js');
 
@@ -18,12 +18,32 @@ const checkModuleOwnership = async (moduleId, userId, role) => {
 	return module.course.instructorId === moduleId;
 };
 
+const checkLessonAccess = async (lesson, user) => {
+	if (!user) return false;
+	if (user.role === 'ADMIN') return true;
+	if (user.role === 'INSTRUCTOR') {
+		return lesson.module.course.instructorId === user.id;
+	}
+
+	//check enrollment
+	const enrollment = await prisma.enrollment.findUnique({
+		where: {
+			userId_courseId: {
+				userId: user.id,
+				courseId: lesson.module.course.id,
+			},
+		},
+	});
+
+	return !!enrollment;
+};
+
 //Create lessons
 exports.createLesson = catchAsync(async (req, res, next) => {
 	const { moduleId } = req.params;
 
 	const isOwner = await checkModuleOwnership(
-		courseId,
+		moduleId,
 		req.user.id,
 		req.user.role,
 	);
@@ -137,16 +157,37 @@ exports.getLesson = catchAsync(async (req, res, next) => {
 
 	const lesson = await prisma.lesson.findUnique({
 		where: { id: req.params.id },
+		include: {
+			module: { include: { course: true } },
+		},
 	});
 
 	if (!lesson) {
 		return next(new AppError('No lesson found with that ID', 404));
 	}
 
-	res.status(200).json({
-		status: 'success',
-		data: { lesson },
-	});
+	const hasAccess = await checkLessonAccess(lesson, req.user);
+	if (hasAccess) {
+		res.status(200).json({
+			status: 'success',
+			data: { lesson },
+		});
+	} else {
+		res.status(200).json({
+			status: 'success',
+			data: {
+				lesson: {
+					id: lesson.id,
+					title: lesson.title,
+					order: lesson.order,
+					type: lesson.type,
+					duration: lesson.duration,
+					moduleId: lesson.moduleId,
+					access: 'restricted', // Flag for frontend to show lock icon
+				},
+			},
+		});
+	}
 });
 //Update Lesson
 exports.updateLesson = catchAsync(async (req, res, next) => {
@@ -183,7 +224,7 @@ exports.updateLesson = catchAsync(async (req, res, next) => {
 });
 
 //Delete Lesson
-exports.deleteModule = catchAsync(async (req, res, next) => {
+exports.deleteLesson = catchAsync(async (req, res, next) => {
 	const { moduleId, id } = req.params;
 
 	const isOwner = await checkModuleOwnership(
@@ -213,4 +254,29 @@ exports.deleteModule = catchAsync(async (req, res, next) => {
 		status: 'success',
 		data: null,
 	});
+});
+
+exports.markLessonComplete = catchAsync(async (req, res, next) => {
+	const { id: lessonId } = req.params;
+	const userId = req.user.id;
+
+	const progress = await prisma.lessonProgress.upsert({
+		where: {
+			userId_lessonId: { userId, lessonId },
+		},
+        update:{
+            completed:true
+        },
+        create:{
+            userId,
+            lessonId,
+            completed:true
+        }
+	});
+
+
+    res.status(200).json({
+        status:'success',
+        data:{progress}
+    })
 });
